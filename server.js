@@ -10,9 +10,23 @@ let users = [
 
 let squabs = [
     {squabId: '1', userId: '1', squabs: 'I hate you'},
-    {squabId: '3', userId: '2', squabs: 'Blurgh"'},
+    {squabId: '3', userId: '2', squabs: 'Blurgh'},
     {squabId: '3', userId: '3', squabs: 'This stinks.'}
 ];
+
+let generateId = function() {
+    return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString()
+};	
+
+let readBody = (req, callback) => {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      callback(body);
+    });
+};
 
 let authenticate = (req, res, cb) => {
     users.forEach((user) => {
@@ -44,9 +58,37 @@ let listUser = (req, res) => {
     res.send(user);
 }
 
+let listSquabs = (req, res) => {
+    res.send(squabs);
+}
+
+let addUser = (req, res) => {
+    let newId = generateId();
+    readBody(req, (body) => {
+        let newUser = JSON.parse(body);
+        newUser.userId = newId;
+        users.push(newUser);
+    })
+    res.end('User has been added.');
+}
+
+let addSquab = (req, res) => {
+    let userId = req.params.userId;
+    let newId = generateId();
+    readBody(req, (body) => {
+        let newSquab = JSON.parse(body);
+        newSquab.userId = userId;
+        newSquab.squabId = newId;
+        squabs.push(newSquab);
+    })
+    res.end('User has been added.');
+}
+
 app.get('/users/:userId/squabs', authenticate, listUserSquabs)
 app.get('/users/:userId/', authenticate, listUser)
 app.get('/users', authenticate, listUsers);
-
+app.get('/squabs', authenticate, listSquabs)
+app.post('/users', addUser);
+app.post('/users/:userId/squabs', authenticate, addSquab);
 
 app.listen(3000);
